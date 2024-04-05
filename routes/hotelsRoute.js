@@ -6,7 +6,7 @@ import { verifyAdmin } from "../utils/verifyToken.js";
 const router = new Router();
 
 // Add a new hotel
-router.post("/", verifyAdmin, async (ctx) => {
+router.post("/", async (ctx) => {
   const newHotel = new Hotel(ctx.request.body);
   try {
     const savedHotel = await newHotel.save();
@@ -18,13 +18,9 @@ router.post("/", verifyAdmin, async (ctx) => {
 });
 
 // Get all hotels
-router.get("/", verifyAdmin, async (ctx) => {
-  const { min, max, ...others } = ctx.query;
+router.get("/", async (ctx) => {
   try {
-    const hotels = await Hotel.find({
-      ...others,
-      cheapestPrice: { $gte: min || 1, $lte: max || 999 },
-    }).limit(parseInt(ctx.query.limit));
+    const hotels = await Hotel.find();
     ctx.status = 200;
     ctx.body = hotels;
   } catch (error) {
@@ -32,8 +28,28 @@ router.get("/", verifyAdmin, async (ctx) => {
   }
 });
 
+router.get("/search", async (ctx) => {
+  let { type, guests } = ctx.query;
+  guests = parseInt(guests);
+  try {
+    const hotels = await Hotel.find({
+      type,
+      guestLimit: { $gte: guests },
+    });
+    ctx.status = 200;
+    if (hotels.length === 0) {
+      ctx.body = { message: "No hotels found", hotels: [] };
+      return;
+    }
+
+    ctx.body = { message: "No hotels found", hotels };
+  } catch (error) {
+    ctx.throw(400, error);
+  }
+});
+
 // Update a hotel
-router.put("/:id", verifyAdmin, async (ctx) => {
+router.put("/:id", async (ctx) => {
   try {
     const updatedHotel = await Hotel.findByIdAndUpdate(
       ctx.params.id,
@@ -51,58 +67,15 @@ router.put("/:id", verifyAdmin, async (ctx) => {
 router.get("/search/:id", async (ctx) => {
   try {
     const foundHotel = await Hotel.findById(ctx.params.id);
+    if (!foundHotel) {
+      ctx.throw(400, { message: "Hotel not found" });
+      return;
+    }
+
     ctx.status = 200;
     ctx.body = foundHotel;
   } catch (error) {
-    ctx.throw(400, "Cannot find hotel");
-  }
-});
-
-// Find Number of hotels by City
-router.get("/countByCity", async (ctx) => {
-  const cities = ctx.query.cities.split(",");
-  try {
-    const list = await Promise.all(
-      cities.map((city) => Hotel.countDocuments({ city }))
-    );
-    ctx.status = 200;
-    ctx.body = list;
-  } catch (error) {
-    ctx.throw(400, error);
-  }
-});
-
-// Find Number of hotels by Type
-router.get("/countByType", async (ctx) => {
-  try {
-    const hotelCount = await Hotel.countDocuments({ type: "Hotel" });
-    const apartmentCount = await Hotel.countDocuments({ type: "Apartment" });
-    const resortCount = await Hotel.countDocuments({ type: "Resort" });
-    const villaCount = await Hotel.countDocuments({ type: "Villa" });
-    const cabinCount = await Hotel.countDocuments({ type: "Cabin" });
-    const cottageCount = await Hotel.countDocuments({ type: "Cottage" });
-    const vacationhomeCount = await Hotel.countDocuments({
-      type: "Vacation home",
-    });
-    const guesthouseCount = await Hotel.countDocuments({ type: "Guest house" });
-    const motelCount = await Hotel.countDocuments({ type: "Motel" });
-
-    const data = [
-      { type: "hotel", count: hotelCount },
-      { type: "apartment", count: apartmentCount },
-      { type: "resort", count: resortCount },
-      { type: "villa", count: villaCount },
-      { type: "cabin", count: cabinCount },
-      { type: "cottage", count: cottageCount },
-      { type: "vacation home", count: vacationhomeCount },
-      { type: "guest house", count: guesthouseCount },
-      { type: "motel", count: motelCount },
-    ];
-
-    ctx.status = 200;
-    ctx.body = data;
-  } catch (error) {
-    ctx.throw(400, error.message);
+    ctx.throw(400, { message: "Hotel not found", error });
   }
 });
 
@@ -121,7 +94,7 @@ router.get("/room/:id", async (ctx) => {
 });
 
 // Delete a hotel
-router.delete("/:id", verifyAdmin, async (ctx) => {
+router.delete("/:id", async (ctx) => {
   try {
     const deletedHotel = await Hotel.findOneAndDelete(ctx.params.id);
     ctx.status = 200;
@@ -137,6 +110,24 @@ router.get("/featured", async (ctx) => {
     const featuredHotels = await Hotel.find({ featured: true });
     ctx.status = 200;
     ctx.body = featuredHotels;
+  } catch (error) {
+    ctx.throw(400, error);
+  }
+});
+
+//Get similar hotels
+router.get("/similar", async (ctx) => {
+  let { guests, id } = ctx.query;
+  guests = parseInt(guests);
+  try {
+    const similarHotels = await Hotel.find({
+      guestLimit: guests,
+    }).limit(3);
+    const filteredHotels = similarHotels.filter(
+      (hotel) => hotel._id.toString() !== id
+    );
+    ctx.status = 200;
+    ctx.body = { message: "hotels found!", filteredHotels };
   } catch (error) {
     ctx.throw(400, error);
   }

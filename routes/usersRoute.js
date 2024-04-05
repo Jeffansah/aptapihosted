@@ -5,7 +5,7 @@ import { verifyAdmin, verifyUser } from "../utils/verifyToken.js";
 const router = new Router();
 
 // Get all users
-router.get("/", verifyAdmin, async (ctx, next) => {
+router.get("/", async (ctx, next) => {
   try {
     const users = await User.find();
     ctx.status = 200;
@@ -20,7 +20,6 @@ router.get("/:id", async (ctx, next) => {
   try {
     const foundUser = await User.findById(ctx.params.id);
     ctx.status = 200;
-    console.log(ctx.cookies.get("access_token"));
     ctx.body = { message: "Found user!", foundUser };
   } catch (error) {
     error.message = "Cannot find user";
@@ -29,7 +28,7 @@ router.get("/:id", async (ctx, next) => {
 });
 
 // Update a user
-router.put("/:id", verifyUser, async (ctx, next) => {
+router.put("/:id", async (ctx, next) => {
   try {
     const updatedUser = await User.findByIdAndUpdate(
       ctx.params.id,
@@ -44,7 +43,7 @@ router.put("/:id", verifyUser, async (ctx, next) => {
 });
 
 // Delete a user
-router.delete("/:id", verifyUser, async (ctx, next) => {
+router.delete("/:id", async (ctx, next) => {
   try {
     const deletedUser = await User.findOneAndDelete(ctx.params.id);
     ctx.status = 200;
@@ -55,7 +54,7 @@ router.delete("/:id", verifyUser, async (ctx, next) => {
 });
 
 //Delete all users
-router.delete("/", verifyAdmin, async (ctx, next) => {
+router.delete("/", async (ctx, next) => {
   try {
     const deletedUsers = await User.deleteMany();
     ctx.status = 200;

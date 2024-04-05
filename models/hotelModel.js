@@ -58,6 +58,10 @@ const HotelSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  guestLimit: {
+    type: Number,
+    required: true,
+  },
 });
 
 export default mongoose.model("Hotel", HotelSchema);
