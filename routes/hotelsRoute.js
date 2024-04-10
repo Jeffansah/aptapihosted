@@ -1,6 +1,5 @@
 import Router from "koa-router";
 import Hotel from "../models/hotelModel.js";
-import Room from "../models/roomModel.js";
 import { verifyAdmin } from "../utils/verifyToken.js";
 
 const router = new Router();
