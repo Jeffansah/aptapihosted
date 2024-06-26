@@ -40,8 +40,8 @@ router.post("/payment", async (ctx) => {
         endDate: ctx.request.body.dates[0].endDate,
       },
       mode: "payment",
-      success_url: "http://localhost:3000/",
-      cancel_url: "http://localhost:3000/stays",
+      success_url: "https://apt-stays.vercel.app/",
+      cancel_url: "http://apt-stays.vercel.app/stays",
     });
     if (session) {
       try {
